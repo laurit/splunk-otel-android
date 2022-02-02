@@ -71,6 +71,7 @@ class RumInitializer {
         VisibleScreenTracker visibleScreenTracker = new VisibleScreenTracker();
 
         long startTimeNanos = timingClock.now();
+        List<AppStateListener> appStateListeners = new ArrayList<>();
 
         ConnectionUtil connectionUtil = connectionUtilSupplier.get();
         initializationEvents.add(new InitializationEvent("connectionUtilInitialized", timingClock.now()));
@@ -79,6 +80,7 @@ class RumInitializer {
         initializationEvents.add(new RumInitializer.InitializationEvent("exporterInitialized", timingClock.now()));
 
         SessionId sessionId = new SessionId();
+        appStateListeners.add(new SessionIdInactivityTimeoutListener(sessionId));
         initializationEvents.add(new RumInitializer.InitializationEvent("sessionIdInitialized", timingClock.now()));
 
         SdkTracerProvider sdkTracerProvider = buildTracerProvider(Clock.getDefault(), zipkinExporter, sessionId, rumVersion, visibleScreenTracker, connectionUtil);
@@ -87,7 +89,6 @@ class RumInitializer {
         OpenTelemetrySdk openTelemetrySdk = OpenTelemetrySdk.builder().setTracerProvider(sdkTracerProvider).build();
         initializationEvents.add(new RumInitializer.InitializationEvent("openTelemetrySdkInitialized", timingClock.now()));
 
-        List<AppStateListener> appStateListeners = new ArrayList<>();
         if (config.isAnrDetectionEnabled()) {
             appStateListeners.add(initializeAnrReporting(mainLooper));
             initializationEvents.add(new RumInitializer.InitializationEvent("anrMonitorInitialized", timingClock.now()));
